@@ -17,8 +17,12 @@ const ClassForm = dynamic(() => import("./forms/ClassForm"), {
     loading: () => <p>Loading....</p>
 })
 
+const SubjectForm = dynamic(() => import("./forms/SubjectForm"), {
+    loading: () => <p>Loading....</p>
+})
+
 type FormModalProps = {
-    table: "student" | "local" | "class";
+    table: "student" | "local" | "class" | "subject";
     type: "create" | "update";
     data?: any;
     relatedData?: any;
@@ -60,6 +64,17 @@ const FormModal: React.FC<FormModalProps> = ({
         } else if (table === "class") {
             return (
                 <ClassForm
+                    type={type}
+                    data={data}
+                    setOpen={setOpen}
+                    relatedData={relatedData}
+                    onSuccess={onSuccess}
+                />
+            );
+        }
+        else if (table === "subject") {
+            return (
+                <SubjectForm
                     type={type}
                     data={data}
                     setOpen={setOpen}
