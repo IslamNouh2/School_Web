@@ -41,7 +41,7 @@ export default function DashboardLayout({
                 {/* left */}
                 <div className="w-[13%] md:w-[8%] lg:w-[16%] xl:w-[13%] p-4">
                     <Link rel="" href="/" className="flex items-center justify-center gap-2 lg:justify-start">
-                        <img src="/logo.png" alt="logo" width={32} height={32} />
+                        <Image src="/logo.png" alt="logo" width={32} height={32} />
                         <span className="hidden lg:block">Del.School</span>
                     </Link>
                     <Menu />

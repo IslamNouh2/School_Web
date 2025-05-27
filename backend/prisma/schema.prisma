@@ -102,20 +102,23 @@ model classes {
 }
 
 model subject {
-  subjectId   Int     @id @default(autoincrement())
+  subjectId   Int       @id @default(autoincrement())
   subjectName String
   totalGrads  Float
   parentId    Int
   BG          Int
   BD          Int
-  okBlock     Boolean @default(false)
+  level       Int?
+  dateCreate  DateTime?
+  dateModif   DateTime?
+  okBlock     Boolean   @default(false)
 
   parent   subject?  @relation("SubjectToParent", fields: [parentId], references: [subjectId])
   children subject[] @relation("SubjectToParent")
 }
 
 model parameter {
-  paramId   Int    @id @default(autoincrement())
-  paramName String @unique
-  okActive Boolean @default(false)
+  paramId   Int     @id @default(autoincrement())
+  paramName String  @unique
+  okActive  Boolean @default(false)
 }

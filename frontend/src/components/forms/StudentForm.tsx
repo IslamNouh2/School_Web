@@ -4,6 +4,7 @@ import { ComboboxDemo } from "../ui/combobox";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import api from "@/utils/api";
+import Image from "next/image";
 
 type StudentFormProps = {
     type: "create" | "update";
@@ -148,7 +149,7 @@ const StudentForm: React.FC<StudentFormProps> = ({
                     <div className="flex flex-col items-center space-y-2">
                         <h1 className="text-xl font-medium">Ajouter Student</h1>
                         {form.photo && (
-                            <img
+                            <Image
                                 src={URL.createObjectURL(form.photo)}
                                 alt="Preview"
                                 className="h-24 w-24 rounded-full object-cover border"

@@ -38,6 +38,12 @@ const columns = [
     { header: "Actions", accessor: "action" },
 ];
 
+const sortMap: Record<string, string> = {
+    top: "dateCreate",
+    bottom: "code",
+    right: "ClassName",
+};
+
 const ClassList = () => {
     const [classes, setClasses] = useState<Class[]>([]);
     const [loading, setLoading] = useState(true);
@@ -70,15 +76,11 @@ const ClassList = () => {
         []
     );
 
-    const sortMap: Record<string, string> = {
-        top: "dateCreate",
-        bottom: "code",
-        right: "ClassName",
-    };
+    
 
     useEffect(() => {
         fetchClasses(currentPage, sortMap[position]);
-        console.log(sortMap[position]);
+        //console.log(sortMap[position]);
         return () => fetchClasses.cancel();
     }, [currentPage, position, fetchClasses]);
 

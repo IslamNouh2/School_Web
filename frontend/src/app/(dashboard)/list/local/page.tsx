@@ -29,6 +29,11 @@ const columns = [
     { header: "Actions", accessor: "action" },
 ];
 
+const sortMap: Record<string, string> = {
+    top: "dateCreate",
+    bottom: "code",
+    right: "ClassName", // assuming 'Nom' maps to class name
+};
 
 const localList = () => {
     const [locals, setLocals] = useState<local[]>([]);
@@ -65,21 +70,16 @@ const localList = () => {
         []
     );
 
-    const sortMap: Record<string, string> = {
-        top: "dateCreate",
-        bottom: "code",
-        right: "ClassName", // assuming 'Nom' maps to class name
-    };
 
 
-
-    useEffect(() => {
-        fetchLocal(currentPage);
-        return () => fetchLocal.cancel();
-    }, [currentPage, fetchLocal]);
+    // useEffect(() => {
+    //     fetchLocal(currentPage);
+    //     return () => fetchLocal.cancel();
+    // }, [currentPage, fetchLocal]);
 
     useEffect(() => {
         fetchLocal(currentPage, sortMap[position]);
+        return () => fetchLocal.cancel();
     }, [currentPage, position]);
 
     useEffect(() => {

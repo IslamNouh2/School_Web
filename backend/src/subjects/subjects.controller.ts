@@ -12,6 +12,7 @@ export class SubjectsController {
     return this.subjectsService.create(createSubjectDto);
   }
 
+  
   @Get()
   findAll(
     @Query('page') page = '1',

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { login } from "@/api/auth";
+import Image from "next/image";
 
 export function LoginForm() {
     const [email, setEmail] = useState("");
@@ -63,7 +64,7 @@ export function LoginForm() {
                 Welcome to DelSchool
             </h2>
             <p className="mt-2 max-w-sm text-sm text-neutral-400 dark:text-neutral-500">
-                If you don't have an account, please contact the administrator.
+                If you don`&apos;`t have an account, please contact the administrator.
             </p>
 
             {error && (
@@ -81,11 +82,11 @@ export function LoginForm() {
                             className={`h-20 w-20 rounded-full border-2 flex flex-col justify-center items-center cursor-pointer transition ${selectedRole === role ? "border-blue-500 bg-blue-100" : "border-gray-200"
                                 }`}
                         >
-                            <img
-                                src={`/images/${role.toLowerCase()}.png`}
+                            {/* <Image
+                                src={`/${role.toLowerCase()}.png`}
                                 alt={role}
                                 className="h-10 w-10 mb-1"
-                            />
+                            /> */}
                             <span className="text-xs font-medium">{role}</span>
                         </div>
                     ))}

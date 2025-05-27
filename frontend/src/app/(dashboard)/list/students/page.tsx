@@ -47,7 +47,7 @@ const StudentList = () => {
 
 
     useEffect(() => {
-        console.log('Calling fetchStudents with term:', searchTerm, 'page:', currentPage);
+        //console.log('Calling fetchStudents with term:', searchTerm, 'page:', currentPage);
         if (isClient) {
             fetchStudents(searchTerm, currentPage);
         }

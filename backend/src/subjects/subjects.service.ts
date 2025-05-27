@@ -26,20 +26,28 @@ export class SubjectsService {
       parentId = createSubjectDto.parentId ?? -1;
     }
 
-    // Step 1: Get BG and BD of the parent
+    // Step 1: Get BG, BD, and calculate level of the parent
     const parent = await this.prisma.subject.findUnique({
       where: { subjectId: parentId },
-      select: { BG: true, BD: true },
+      select: { BG: true, BD: true, level: true },
     });
 
-    if (!parent) {
+    if (!parent && parentId !== -1) {
       throw new Error('Parent subject not found');
     }
 
-    const { BG: parentBG, BD: parentBD } = parent;
+    const { BG: parentBG, BD: parentBD, level: parentLevel } = parent || {
+      BG: 0,
+      BD: 0,
+      level: -1,
+    };
+
+    // Calculate the new subject's level
+    const level = parentId === -1 ? 0 : (parentLevel ?? 0) + 1;
 
     // Step 2: Use transaction to update & insert
-    await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
+      // Update existing subjects' BG/BD values
       await tx.subject.updateMany({
         where: { BG: { gt: parentBD } },
         data: { BG: { increment: 2 } },
@@ -50,18 +58,23 @@ export class SubjectsService {
         data: { BD: { increment: 2 } },
       });
 
-      await tx.subject.create({
+      // Create the new subject with calculated level
+      const newSubject = await tx.subject.create({
         data: {
           subjectName,
           totalGrads,
           parentId,
           BG: parentBD,
           BD: parentBD + 1,
+          level, // Add the calculated level
+          dateCreate: new Date(),
+          dateModif: new Date(),
+          okBlock: false,
         },
       });
-    });
 
-    return Subject
+      return newSubject;
+    });
   }
 
 
@@ -72,6 +85,7 @@ export class SubjectsService {
 
     const [subject, total] = await this.prisma.$transaction([
       this.prisma.subject.findMany({
+        where: { subjectId: { gt: -1 } },
         orderBy: {
           [orderByField]: 'desc',
         },
@@ -88,6 +102,7 @@ export class SubjectsService {
       totalPages: Math.ceil(total / limit),
     };
   }
+
 
   findOne(id: number) {
     return `This action returns a #${id} subject`;

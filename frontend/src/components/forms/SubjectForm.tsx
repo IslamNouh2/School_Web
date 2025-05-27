@@ -18,13 +18,15 @@ const ComboboxDemo = dynamic(
     }
 );
 
-type Local = {
-    localId: number;
-    name: string;
-    code: string;
+type subject = {
+    SubjectId: number;
+    subjectNme: string;
+    totalGrades: Float16Array;
+    BG: number;
+    BD: number;
 };
 
-type ClassFormProps = {
+type SubjectFormProps = {
     type: "create" | "update";
     data?: any;
     setOpen: Dispatch<SetStateAction<boolean>>;
@@ -32,7 +34,7 @@ type ClassFormProps = {
     onSuccess?: () => void;
 };
 
-const ClassForm: React.FC<ClassFormProps> = ({
+const subjectForm: React.FC<SubjectFormProps> = ({
     type,
     data,
     setOpen,
@@ -40,13 +42,12 @@ const ClassForm: React.FC<ClassFormProps> = ({
     onSuccess,
 }) => {
     const [form, setForm] = useState({
-        ClassName: "",
-        Code: "",
-        NumStudent: "",
+        subjectName: "",
+        totalGrads: "",
     });
 
-    const [locals, setLocals] = useState<Local[]>([]);
-    const [selectedLocalName, setSelectedLocalName] = useState<string | null>(null);
+    const [subjects, steSubjects] = useState<subject[]>([]);
+    const [selectedParentName, setSelectedParentName] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -55,11 +56,11 @@ const ClassForm: React.FC<ClassFormProps> = ({
         const fetchLocals = async () => {
             try {
                 setLoading(true);
-                const response = await api.get("/local", { withCredentials: true });
-                setLocals(response.data.locals || []);
+                const response = await api.get("/subjects/parent", { withCredentials: true });
+                steSubjects(response.data.subject || []);
             } catch (err) {
-                console.error("Failed to load locals:", err);
-                setError("Failed to load classroom locations");
+                console.error("Failed to load subject:", err);
+                setError("Failed to load subject");
             } finally {
                 setLoading(false);
             }
@@ -234,4 +235,4 @@ const ClassForm: React.FC<ClassFormProps> = ({
     );
 };
 
-export default ClassForm;
+export default subjectForm;
