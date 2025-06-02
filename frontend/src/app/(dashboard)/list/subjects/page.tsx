@@ -3,9 +3,13 @@
 import DataTable from "@/components/DataTable";
 import FormModal from "@/components/FormModal";
 import PaginationBar from "@/components/PaginationBar";
-import SbjectCards from "@/components/SbjectCards";
-import Table from "@/components/Table";
-import TableSearch from "@/components/TableSearch";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/ui/pagination";
@@ -23,6 +27,7 @@ type Subject = {
     subjectId: number;
     subjectName: string;
     totalGrads: number;
+
 }
 const subjectColumns = [
     { header: 'Subject Name', accessor: 'subjectName' },
@@ -32,8 +37,8 @@ const subjectColumns = [
 
 const sortMap: Record<string, string> = {
     top: "dateCreate",
-    bottom: "code",
-    right: "ClassName",
+    bottom: "subjectId",
+    right: "subjectName",
 };
 
 
@@ -54,7 +59,8 @@ const SubjectList = () => {
             try {
                 const url = `/subjects?page=${page}&sortBy=${sortBy}`;
                 const response = await api.get(url, { withCredentials: true });
-                //console.log("Full API response:", response.data);
+                console.log("Full API response:", response.data);
+                //console.log(url);
                 const subjectArray = Array.isArray(response.data.subject) ? response.data.subject : [];
                 setSubject(subjectArray);
                 setTotalPages(response.data.totalPages || 1);
@@ -76,7 +82,7 @@ const SubjectList = () => {
 
     useEffect(() => {
         fetchSubject(currentPage, sortMap[position]);
-        console.log(sortMap[position]);
+        //console.log(sortMap[position]);
         //return () => fetchSubject.cancel();
     }, [currentPage, position, fetchSubject]);
 
@@ -87,7 +93,7 @@ const SubjectList = () => {
 
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
-        router.push(`subject?page=${newPage}`);
+        router.push(`subjects?page=${newPage}`);
     };
 
     const handleDelete = async (id: number) => {
@@ -116,8 +122,8 @@ const SubjectList = () => {
                 <td className="p-2">{item.subjectId}</td>
             </td>
             <td className="p-2 pl-4">{item.subjectName}</td>
-            <td className="p-2">{item.totalGrads}</td>
-            <td className="p-2">
+            <td className="p-2 pl-4">{item.totalGrads}</td>
+            <td className="p-2 pl-4">
                 <div className="flex items-center gap-2">
                     <FormModal
                         table="subject"
@@ -171,9 +177,23 @@ const SubjectList = () => {
                             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
                                 <Image src="/filter.png" alt="" width={14} height={14} />
                             </button>
-                            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-                                <Image src="/sort.png" alt="" width={14} height={14} />
-                            </button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+                                        <Image src="/sort.png" alt="Sort" width={14} height={14} />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-50">
+                                    <DropdownMenuRadioGroup
+                                        value={position}
+                                        onValueChange={setPosition}
+                                    >
+                                        <DropdownMenuRadioItem value="top">Date Creation</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="bottom">Code</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="right">Nom</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             {role === "admin" && (
                                 <FormModal table="subject" type="create" onSuccess={handleSuccess} />
                             )}

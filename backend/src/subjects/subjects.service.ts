@@ -78,17 +78,29 @@ export class SubjectsService {
   }
 
 
+  async findSubSubjects() {
+    return this.prisma.subject.findMany({
+      where: {
+        parentId: -1 // Only get subjects that have a parent
+      },
+      select: {
+        subjectId: true,
+        subjectName: true,
+        totalGrads: true,
+        BG: true,
+        BD: true
+      }
+    });
+  }
 
 
-  async findAll(page: number = 1, limit: number = 10, orderByField: string = 'subjectName') {
+  async findAll(page: number = 1, limit: number = 10, orderByField: string = 'dateCreate') {
     const skip = (page - 1) * limit;
 
     const [subject, total] = await this.prisma.$transaction([
       this.prisma.subject.findMany({
         where: { subjectId: { gt: -1 } },
-        orderBy: {
-          [orderByField]: 'desc',
-        },
+        orderBy: { [orderByField]: 'desc' },
         skip,
         take: limit,
       }),
@@ -101,11 +113,6 @@ export class SubjectsService {
       page,
       totalPages: Math.ceil(total / limit),
     };
-  }
-
-
-  findOne(id: number) {
-    return `This action returns a #${id} subject`;
   }
 
   async update(subjectId: number, updateDto: UpdateSubjectDto) {
@@ -209,7 +216,7 @@ export class SubjectsService {
 
     return { message: 'Subject updated successfully' };
   }
-  
+
 
   async remove(id: number) {
     const subject = await this.prisma.subject.findUnique({
@@ -222,4 +229,11 @@ export class SubjectsService {
 
     await this.prisma.subject.delete({ where: { subjectId: id } });
   }
+
+  async StubjectCount() {
+    const count = await this.prisma.subject.count();
+    return count
+  }
+
+
 }

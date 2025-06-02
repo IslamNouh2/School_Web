@@ -54,16 +54,16 @@ const ClassList = () => {
     const [currentPage, setCurrentPage] = useState(pageParam);
     const { toast } = useToast();
     const [position, setPosition] = useState("top");
+    const [countLocal, setCountLocal] = useState(0);
 
     const fetchClasses = useCallback(
         debounce(async (page: number, sortBy: string = "dateCreate") => {
             try {
                 const url = `/class?page=${page}&sortBy=${sortBy}`;
                 const response = await api.get(url, { withCredentials: true });
-                console.log("Full API response:", response.data);
+                //console.log("Full API response:", response.data);
                 const classesArray = Array.isArray(response.data.classes) ? response.data.classes : [];
                 setClasses(classesArray);
-
                 setTotalPages(response.data.totalPages || 1);
             } catch (err) {
                 console.error("❌ Failed to fetch Classes:", err);
@@ -76,7 +76,21 @@ const ClassList = () => {
         []
     );
 
-    
+
+    useEffect(() => {
+        const fetchLocal = async () => {
+            try {
+                const res = await api.get('/local/counter', { withCredentials: true });
+                const locals = res.data || 0;
+                setCountLocal(locals);
+            } catch (error) {
+                console.log('Failed to fetch Local count:', error);
+                setCountLocal(0);
+            }
+        }
+        fetchLocal();
+    }, [])
+
 
     useEffect(() => {
         fetchClasses(currentPage, sortMap[position]);
@@ -177,7 +191,13 @@ const ClassList = () => {
                             </DropdownMenu>
 
                             {role === "admin" && (
-                                <FormModal table="class" type="create" onSuccess={handleSuccess} />
+                                <FormModal
+                                    table="class"
+                                    type="create"
+                                    onSuccess={handleSuccess}
+                                    enable={countLocal > 0}
+                                    director="/list/local"
+                                />
                             )}
                         </div>
                     </div>

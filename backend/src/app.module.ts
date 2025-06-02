@@ -6,8 +6,9 @@ import { StudentModule } from './student/student.module';
 import { LocalModule } from './local/local.module';
 import { ClassModule } from './class/class.module';
 import { SubjectsModule } from './subjects/subjects.module';
+import { ParameterModule } from './parameter/parameter.module';
 
 @Module({
-  imports: [AuthModule, prismaModule, UsersModule, StudentModule, LocalModule, ClassModule, SubjectsModule]
+  imports: [AuthModule, prismaModule, UsersModule, StudentModule, LocalModule, ClassModule, SubjectsModule, ParameterModule]
 })
 export class AppModule {}

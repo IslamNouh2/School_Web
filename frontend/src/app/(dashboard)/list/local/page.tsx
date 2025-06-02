@@ -1,5 +1,6 @@
 "use client"
 
+import DataTable from "@/components/DataTable";
 import FormModal from "@/components/FormModal";
 import PaginationBar from "@/components/PaginationBar";
 import Table from "@/components/Table";
@@ -22,11 +23,11 @@ type local = {
     NumClass: number;
 };
 
+
 const columns = [
     { header: "Local", accessor: "name" },
     { header: "Code", accessor: "code" },
     { header: "Number", accessor: "NumClass" },
-    { header: "Actions", accessor: "action" },
 ];
 
 const sortMap: Record<string, string> = {
@@ -45,9 +46,25 @@ const localList = () => {
     const [currentPage, setCurrentPage] = useState(pageParam);
     const { toast } = useToast();
     const [position, setPosition] = React.useState("top");
-    const [data, setData] = React.useState([])
+    const [data, setData] = React.useState([]);
+    const [subject, setSubject] = useState(0);
 
 
+
+    useEffect(() => {
+        const fetchSubject = async () => {
+            try {
+                const res = await api.get('/subjects/counter', { withCredentials: true });
+                const subjects = res.data || 0;
+                //console.log(subjects);
+                setSubject(subjects);
+            } catch (error) {
+                console.log('Failed to fetch subject count:', error);
+                setSubject(0)
+            }
+        };
+        fetchSubject();
+    });
 
     const fetchLocal = useCallback(
         debounce(async (page: number, sortBy: string = "dateCreate") => {
@@ -116,11 +133,12 @@ const localList = () => {
         fetchLocal(currentPage); // Refresh data after successful operation
     };
 
-    const renderRow = (item: local) => (
+    const renderRow = (item: local, index: number) => (
         <tr
             key={item.localId}
             className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
         >
+            <td className="p-4">{index +1}</td>
             <td className="p-4">{item.name}</td>
             <td className="p-4">{item.code}</td>
             <td className="p-4">{item.NumClass}</td>
@@ -174,14 +192,22 @@ const localList = () => {
                                     </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-
                             {role === "admin" && (
-                                <FormModal table="local" type="create" onSuccess={handleSuccess} />
+                                <FormModal
+                                    table="local"
+                                    type="create"
+                                    onSuccess={handleSuccess}
+                                    enable={subject > 0}
+                                    director="/list/subjects"
+                                />
                             )}
+
+
+
                         </div>
                     </div>
                 </div>
-                <Table
+                <DataTable
                     columns={columns}
                     data={locals}
                     renderRow={renderRow}

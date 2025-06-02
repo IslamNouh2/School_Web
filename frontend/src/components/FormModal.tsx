@@ -4,22 +4,23 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useState } from "react";
 
-// Lazy load StudentForm
-const StudentForm = dynamic(() => import("./forms/StudentForm"), {
-    loading: () => <p>Loading...</p>,
-});
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
-const LocalForm = dynamic(() => import("./forms/LocalForm"), {
-    loading: () => <p>Loading....</p>
-})
-
-const ClassForm = dynamic(() => import("./forms/ClassForm"), {
-    loading: () => <p>Loading....</p>
-})
-
-const SubjectForm = dynamic(() => import("./forms/SubjectForm"), {
-    loading: () => <p>Loading....</p>
-})
+// Lazy load forms
+const StudentForm = dynamic(() => import("./forms/StudentForm"), { loading: () => <p>Loading...</p> });
+const LocalForm = dynamic(() => import("./forms/LocalForm"), { loading: () => <p>Loading....</p> });
+const ClassForm = dynamic(() => import("./forms/ClassForm"), { loading: () => <p>Loading....</p> });
+const SubjectForm = dynamic(() => import("./forms/SubjectForm"), { loading: () => <p>Loading....</p> });
 
 type FormModalProps = {
     table: "student" | "local" | "class" | "subject";
@@ -27,7 +28,9 @@ type FormModalProps = {
     data?: any;
     relatedData?: any;
     onSuccess?: () => void;
-    children?: React.ReactNode;  // Add children prop
+    children?: React.ReactNode;
+    enable?: boolean;
+    director?: string;
 };
 
 const FormModal: React.FC<FormModalProps> = ({
@@ -37,67 +40,45 @@ const FormModal: React.FC<FormModalProps> = ({
     relatedData,
     onSuccess,
     children,
+    enable = true,
+    director,
 }) => {
     const [open, setOpen] = useState(false);
+    const [showDialog, setShowDialog] = useState(false);
 
     const renderForm = () => {
-        if (table === "student") {
-            return (
-                <StudentForm
-                    type={type}
-                    data={data}
-                    setOpen={setOpen}
-                    relatedData={relatedData}
-                    onSuccess={onSuccess}
-                />
-            );
-        } else if (table === "local") {
-            return (
-                <LocalForm
-                    type={type}
-                    data={data}
-                    setOpen={setOpen}
-                    relatedData={relatedData}
-                    onSuccess={onSuccess}
-                />
-            );
-        } else if (table === "class") {
-            return (
-                <ClassForm
-                    type={type}
-                    data={data}
-                    setOpen={setOpen}
-                    relatedData={relatedData}
-                    onSuccess={onSuccess}
-                />
-            );
+        switch (table) {
+            case "student":
+                return <StudentForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} onSuccess={onSuccess} />;
+            case "local":
+                return <LocalForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} onSuccess={onSuccess} />;
+            case "class":
+                return <ClassForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} onSuccess={onSuccess} />;
+            case "subject":
+                return <SubjectForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} onSuccess={onSuccess} />;
+            default:
+                return <p>Form not found</p>;
         }
-        else if (table === "subject") {
-            return (
-                <SubjectForm
-                    type={type}
-                    data={data}
-                    setOpen={setOpen}
-                    relatedData={relatedData}
-                    onSuccess={onSuccess}
-                />
-            );
+    };
+
+    const handleClick = () => {
+        if (!enable) {
+            setShowDialog(true);
+        } else {
+            setOpen(true);
         }
-        return <p>Form not found</p>;
     };
 
     return (
         <>
-            {/* Use children as the trigger if provided */}
             {children ? (
-                <div onClick={() => setOpen(true)}>
+                <div onClick={handleClick}>
                     {children}
                 </div>
             ) : (
                 <button
-                    className={`${type === "create" ? "w-8 h-8" : "w-7 h-7"} flex items-center justify-center rounded-full ${type === "create" ? "bg-lamaYellow" : "bg-lamaSky"
-                        }`}
-                    onClick={() => setOpen(true)}
+                    className={`${type === "create" ? "w-8 h-8" : "w-7 h-7"} flex items-center justify-center rounded-full ${type === "create" ? "bg-lamaYellow" : "bg-lamaSky"}`}
+                    onClick={handleClick}
                 >
                     <Image
                         src={type === "create" ? "/plus.png" : "/update.png"}
@@ -121,6 +102,28 @@ const FormModal: React.FC<FormModalProps> = ({
                     </div>
                 </div>
             )}
+
+            <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>⚠️ Cannot create {table}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            You must first meet prerequisites before creating a {table}.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Ok</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => {
+                                setShowDialog(false);
+                                window.location.href = director!;
+                            }}
+                        >
+                            Create
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 };

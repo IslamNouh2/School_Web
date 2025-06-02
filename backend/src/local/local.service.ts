@@ -77,4 +77,10 @@ export class LocalService {
 
         await this.prisma.local.delete({ where: { localId: id } });
     }
+
+
+    async CountLocals() {
+        const count = await this.prisma.local.count();
+        return count
+    }
 }

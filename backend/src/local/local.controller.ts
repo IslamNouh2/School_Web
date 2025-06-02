@@ -48,4 +48,9 @@ export class LocalController {
     const Local = await this.localService.UpdateLocal(id, dto);
     return Local;
   }
+
+  @Get('counter')
+  getSubjectCount() {
+    return this.localService.CountLocals();
+  }
 }

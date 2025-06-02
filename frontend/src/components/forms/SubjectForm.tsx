@@ -8,22 +8,25 @@ import { Loader2 } from "lucide-react";
 import api from "@/utils/api";
 import dynamic from "next/dynamic";
 import { Checkbox } from "../ui/checkbox";
+import { toast } from "@/hooks/use-toast";
 
-// Dynamically import ComboboxDemo with fallback
 const ComboboxDemo = dynamic(
     () => import("../ui/combobox").then((mod) => mod.ComboboxDemo),
     {
-        loading: () => <div className="h-10 w-full rounded-md border bg-gray-100 animate-pulse" />,
-        ssr: false
+        loading: () => (
+            <div className="h-10 w-full rounded-md border bg-gray-100 animate-pulse" />
+        ),
+        ssr: false,
     }
 );
 
-type subject = {
+type Subject = {
     SubjectId: number;
     subjectNme: string;
-    totalGrades: Float16Array;
+    totalGrades: number;
     BG: number;
     BD: number;
+    parentId: number | null;
 };
 
 type SubjectFormProps = {
@@ -31,62 +34,121 @@ type SubjectFormProps = {
     data?: any;
     setOpen: Dispatch<SetStateAction<boolean>>;
     relatedData?: any;
-    onSuccess?: () => void;
+    onSuccess?: (selectedSubSubjectId?: number) => void;
 };
 
-const subjectForm: React.FC<SubjectFormProps> = ({
+function buildHierarchyWithIndentation(subjects: Subject[]) {
+    const map = new Map<number | null, Subject[]>();
+
+    subjects.forEach((s) => {
+        const parentId = s.parentId ?? 0;
+        if (!map.has(parentId)) {
+            map.set(parentId, []);
+        }
+        map.get(parentId)!.push(s);
+    });
+
+    const result: { value: string; label: string }[] = [];
+
+    const traverse = (parentId: number | null, level: number) => {
+        const children = map.get(parentId ?? 0) || [];
+        for (const child of children) {
+            const indent = " ".repeat(level); // EM space for better alignment
+            result.push({
+                value: child.SubjectId.toString(),
+                label: `${indent}${child.subjectNme}`,
+            });
+            traverse(child.SubjectId, level + 1);
+        }
+    };
+
+    traverse(null, 0);
+    return result;
+}
+
+const SubjectForm: React.FC<SubjectFormProps> = ({
     type,
     data,
     setOpen,
-    relatedData,
     onSuccess,
 }) => {
     const [form, setForm] = useState({
         subjectName: "",
-        totalGrads: "",
+        totalGrads: 0,
     });
 
-    const [subjects, steSubjects] = useState<subject[]>([]);
-    const [selectedParentName, setSelectedParentName] = useState<string | null>(null);
+    const [subSubjects, setSubSubjects] = useState<
+        { value: string; label: string }[]
+    >([]);
+    const [selectedSubSubjectId, setSelectedSubSubjectId] = useState<number>(-1);
+    const [showSubSubject, setShowSubSubject] = useState<boolean>(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Load locals from API
     useEffect(() => {
-        const fetchLocals = async () => {
+        const fetchParams = async () => {
+            try {
+                const res = await api.get("/parameter/Ok_Sub_subject");
+                console.log("Parameter response:", res.data);
+
+                const value = res.data?.okActive;
+                setShowSubSubject(value === true);
+            } catch (err) {
+                console.error("Failed to fetch sub_subject param", err);
+                setShowSubSubject(false); // fallback
+            }
+        };
+
+        fetchParams();
+    }, []);
+
+    // useEffect(() => {
+    //     console.log("Show Sub Subject:", showSubSubject);
+    // }, [showSubSubject
+    // ]);
+
+    
+    useEffect(() => {
+        if (!showSubSubject) return;
+        const fetchSubSubjects = async () => {
             try {
                 setLoading(true);
-                const response = await api.get("/subjects/parent", { withCredentials: true });
-                steSubjects(response.data.subject || []);
+                const subResponse = await api.get("/subjects/sub");
+                const flatSubjects = subResponse.data || [];
+                const hierarchical = buildHierarchyWithIndentation(flatSubjects);
+                setSubSubjects(hierarchical);
             } catch (err) {
-                console.error("Failed to load subject:", err);
-                setError("Failed to load subject");
+                console.error("Failed to load sub subjects", err);
+                setError("Failed to load sub subjects");
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchLocals();
-    }, []);
+        fetchSubSubjects();
+    }, [showSubSubject]);
 
-    // Initialize form for update
     useEffect(() => {
-        if (type === "update" && data && locals.length > 0) {
+        if (type === "update" && data) {
             setForm({
-                ClassName: data.ClassName || "",
-                Code: data.code || "",
-                NumStudent: data.NumStudent?.toString() || "",
+                subjectName: data.subjectName || "",
+                totalGrads: data.totalGrads || 0,
             });
 
-            if (data.local?.name) {
-                setSelectedLocalName(data.local.name);
+            if (data.subSubject?.subjectId) {
+                setSelectedSubSubjectId(data.subSubject.subjectId);
             }
         }
-    }, [type, data, locals]);
+    }, [type, data]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        setForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubSubjectSelect = (value: string) => {
+        const id = parseInt(value, 10);
+        setSelectedSubSubjectId(id);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -94,115 +156,110 @@ const subjectForm: React.FC<SubjectFormProps> = ({
         setLoading(true);
         setError(null);
 
-        if (!selectedLocalName) {
-            setError("Please select a classroom location");
-            setLoading(false);
-            return;
-        }
-
-        const numStudents = parseInt(form.NumStudent);
-        if (isNaN(numStudents) || numStudents <= 0) {
-            setError("Number of students must be a positive number");
-            setLoading(false);
-            return;
+        if (showSubSubject === true) {
+            if (!selectedSubSubjectId || selectedSubSubjectId <= 0) {
+                setError("Please select a sub subject.");
+                setLoading(false);
+                return;
+            }
+        } else {
+            setSelectedSubSubjectId(-1);
         }
 
         const payload = {
-            ClassName: form.ClassName,
-            code: form.Code,
-            NumStudent: numStudents,
-            localName: selectedLocalName,
+            subjectName: form.subjectName,
+            totalGrads: parseInt(form.totalGrads as any, 10),
+            parentId: selectedSubSubjectId,
         };
 
         try {
             if (type === "create") {
-                await api.post("/class/create", payload, {
+                await api.post("/subjects/createSub", payload, {
                     withCredentials: true,
                     headers: { "Content-Type": "application/json" },
                 });
             } else {
-                await api.put(`/class/${data.classId}`, payload, {
+                await api.patch(`/subject/${data.classId}`, payload, {
                     withCredentials: true,
                     headers: { "Content-Type": "application/json" },
                 });
             }
 
             setOpen(false);
-            onSuccess?.();
+            onSuccess?.(selectedSubSubjectId);
         } catch (err: any) {
             console.error("Operation failed:", err);
-            setError(err.response?.data?.message || "An error occurred");
+            toast({
+                variant: "destructive",
+                title: "Uh oh! An error occurred.",
+                description: err.response?.data?.message,
+            })
+            //setError(err.response?.data?.message || "An error occurred");
         } finally {
             setLoading(false);
         }
     };
 
-    const localOptions = locals.map(local => ({
-        value: local.name,
-        label: `${local.name} (${local.code})`,
-    }));
-
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-                <div className="p-3 bg-red-100 text-red-700 rounded-md">
-                    {error}
-                </div>
+                <div className="p-3 bg-red-100 text-red-700 rounded-md">{error}</div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Class Name</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                        Subject Name
+                    </label>
                     <Input
-                        name="ClassName"
-                        value={form.ClassName}
+                        name="subjectName"
+                        value={form.subjectName}
                         onChange={handleChange}
-                        placeholder="Enter class name"
+                        placeholder="Enter subject name"
                         required
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Class Code</label>
-                    <Input
-                        name="Code"
-                        value={form.Code}
-                        onChange={handleChange}
-                        placeholder="Enter class code"
-                        required
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Number of Students</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                        Total Points
+                    </label>
                     <Input
                         type="number"
-                        name="NumStudent"
-                        value={form.NumStudent}
+                        name="totalGrads"
+                        value={form.totalGrads}
                         onChange={handleChange}
-                        min="1"
-                        placeholder="Enter number of students"
+                        min="0"
+                        placeholder="Enter total points"
                         required
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Classroom Location</label>
-                    {loading ? (
-                        <div className="h-10 w-full rounded-md border bg-gray-100 animate-pulse" />
-                    ) : (
-                        <div className="space-y-2 w-11/12   ">
-                            <ComboboxDemo
-                                frameworks={localOptions}
-                                type="Local"
-                                value={selectedLocalName ?? ""}
-                                    onChange={(val) => setSelectedLocalName(val)}
+                {showSubSubject && (
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                            Sub Subject
+                        </label>
+                        {loading ? (
+                            <div className="h-10 w-full rounded-md border bg-gray-100 animate-pulse" />
+                        ) : (
+                            <div className="space-y-2 w-11/12">
+                                <ComboboxDemo
+                                    frameworks={subSubjects}
+                                    type="sub-subject"
+                                    value={
+                                        selectedSubSubjectId > 0
+                                            ? selectedSubSubjectId.toString()
+                                            : ""
+                                    }
+                                    onChange={handleSubSubjectSelect}
                                     width="w-[109%]"
-                            />
-                        </div>
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                    )}
-                </div>
                 <div className="items-top flex space-x-2">
                     <Checkbox id="terms1" />
                     <div className="grid gap-1.5 leading-none">
@@ -210,9 +267,8 @@ const subjectForm: React.FC<SubjectFormProps> = ({
                             htmlFor="terms1"
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
-                            Block this class
+                            Block this subject
                         </label>
-
                     </div>
                 </div>
             </div>
@@ -225,9 +281,9 @@ const subjectForm: React.FC<SubjectFormProps> = ({
                             Processing...
                         </>
                     ) : type === "create" ? (
-                        "Create Class"
+                        "Create Subject"
                     ) : (
-                        "Update Class"
+                        "Update Subject"
                     )}
                 </Button>
             </DialogFooter>
@@ -235,4 +291,4 @@ const subjectForm: React.FC<SubjectFormProps> = ({
     );
 };
 
-export default subjectForm;
+export default SubjectForm;

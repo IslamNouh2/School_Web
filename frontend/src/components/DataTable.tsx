@@ -9,7 +9,7 @@ const DataTable = ({
     data,
 }: {
     columns: { header: string; accessor: string; className?: string }[];
-    renderRow: (item: any) => React.ReactNode;
+    renderRow: (item: any, index:number) => React.ReactNode;
     data: any[];
 }) => {
     if (!Array.isArray(data)) {
@@ -39,7 +39,7 @@ const DataTable = ({
                 <tbody>
                     {data.map((item, index) => (
                         <React.Fragment key={item.id || index}>
-                            {renderRow(item)}
+                            {renderRow(item, index)}
                         </React.Fragment>
                     ))}
                 </tbody>
